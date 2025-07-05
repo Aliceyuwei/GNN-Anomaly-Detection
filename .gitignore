@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Data files (通常不會放資料檔)
+data/
+
+# VSCode settings
+.vscode/
+
+# macOS 系統檔案
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# 輸出資料夾
+outputs/
+
+# 訓練模型資料夾
+models/
+
+# Python virtual environment folders
+env/
+venv/
+
+# Logs and temp files
+*.log
+*.tmp
