@@ -1,10 +1,10 @@
 # GNN-Anomaly-Detection
 
-GNN-based IDS using CICIDS2023
+GNN-based IDS using CICIDS2017
 
 # GNN-Anomaly-Detection
 
-Graph Neural Network-based Intrusion Detection System (IDS) using CICIDS2023.  
+Graph Neural Network-based Intrusion Detection System (IDS) using CICIDS2017.  
 This project aims to detect network anomalies through graph modeling and GNN architectures such as GCN, GAT, and GraphSAGE.
 
 ---
@@ -26,14 +26,19 @@ The primary goal is to evaluate the effectiveness of GNNs for intrusion detectio
 ## 📁 Folder Structure
 
 GNN-Anomaly-Detection/
-├── README.md # 專案說明文件
-├── requirements.txt # Python 依賴套件
-├── config.yaml # 訓練及參數設定（可選）
 │
 ├── data/ # 資料目錄
-│ ├── raw/ # 原始 CSV（如 CICIDS2023 原始檔）
+│ ├── raw/ # 原始 CSV（如 CICIDS2017 原始檔）
 │ ├── processed/ # 清理與標準化後的資料
 │ └── make_graph.py # 將原始資料轉成 PyG graph 格式的腳本
+│
+├── eda/ # 資料探索（Exploratory Data Analysis）模組
+│ └── label_distribution.py # 顯示與分析 Label 分布情況（例如類別不平衡）
+│
+├── evaluate/ # 評估相關腳本
+│ └── metrics.py # 評估指標與工具函式
+│
+├── experiments/ # 實驗結果、模型檔、訓練紀錄等
 │
 ├── models/ # GNN 模型程式碼
 │ ├── gcn.py # 基線模型 GCN
@@ -41,25 +46,28 @@ GNN-Anomaly-Detection/
 │ └── graphsage.py # GraphSAGE 模型 (可選)
 │
 ├── preprocess/ # 資料前處理相關腳本
+│ ├── data_preview.py # 當前資料匯入測試
+│ ├── valuate.py # 模型評估
+│ ├── train.py # 模型訓練
 │ ├── merge_csvs.py # 合併多天 CSV
 │ ├── clean_data.py # 欄位清理、缺值補齊、標籤編碼
-│ └── preprocess.py # 數值標準化
+│ └── scale_features.py # 數值標準化
 │
 ├── train/ # 訓練相關腳本
 │ ├── train_gcn.py # 訓練 GCN 的腳本
 │ └── train_gat.py # 訓練 GAT 的腳本 (可選)
 │
-├── evaluate/ # 評估相關腳本
-│ └── metrics.py # 評估指標與工具函式
+├── utils/ # 工具函式（資料讀寫、視覺化等）
+│ └── helpers.py # 例如資料載入、繪圖函式
 │
-├── experiments/ # 實驗結果、模型檔、訓練紀錄等
-│
-└── utils/ # 工具函式（資料讀寫、視覺化等）
-└── helpers.py # 例如資料載入、繪圖函式
+├── run_preprocessing_pipeline.py # 資料前處理流程總控腳本
+├── README.md # 專案說明文件
+├── requirements.txt # Python 依賴套件
+└── config.yaml # 訓練及參數設定（可選）
 
 ## 📚 Dataset
 
-We use the **[CICIDS2023 dataset](https://www.unb.ca/cic/datasets/ids-2023.html)**, which contains labeled real-world network traffic, including benign behavior and multiple attack types (e.g., DDoS, brute force, botnets).
+We use the **[CICIDS2017 dataset](https://www.unb.ca/cic/datasets/ids-2017.html)**, which contains labeled real-world network traffic, including benign behavior and multiple attack types (e.g., DDoS, brute force, botnets).
 
 > 💡 You need to request access and download the dataset manually from the official website.
 
