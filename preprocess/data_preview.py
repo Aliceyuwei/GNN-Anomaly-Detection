@@ -7,8 +7,8 @@ print("目前位置：", os.getcwd())
 
 # 用相對路徑讀取資料
 # df = pd.read_csv(
-#     "data/MachineLearningCSV/Monday-WorkingHours.pcap_ISCX.csv", encoding="ISO-8859-1")
-df = pd.read_csv("data/MachineLearningCSV/Monday-WorkingHours.pcap_ISCX.csv",
+#     "data/raw/Monday-WorkingHours.pcap_ISCX.csv", encoding="ISO-8859-1")
+df = pd.read_csv("data/raw/Monday-WorkingHours.pcap_ISCX.csv",
                  encoding="ISO-8859-1", skipinitialspace=True)
 
 

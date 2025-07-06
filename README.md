@@ -26,24 +26,36 @@ The primary goal is to evaluate the effectiveness of GNNs for intrusion detectio
 ## 📁 Folder Structure
 
 GNN-Anomaly-Detection/
-├── README.md # Project documentation
-├── requirements.txt # Python dependencies
-├── config.yaml # Optional config for training
+├── README.md # 專案說明文件
+├── requirements.txt # Python 依賴套件
+├── config.yaml # 訓練及參數設定（可選）
 │
-├── data/ # Raw and processed data
-│ ├── raw/ # Original CSVs from CICIDS2023
-│ ├── processed/ # Graph data in PyG format
-│ └── make_graph.py # Script to build graph from raw data
+├── data/ # 資料目錄
+│ ├── raw/ # 原始 CSV（如 CICIDS2023 原始檔）
+│ ├── processed/ # 清理與標準化後的資料
+│ └── make_graph.py # 將原始資料轉成 PyG graph 格式的腳本
 │
-├── models/ # GNN models (GCN, GAT, etc.)
-│ └── gcn.py # Baseline model: GCN
+├── models/ # GNN 模型程式碼
+│ ├── gcn.py # 基線模型 GCN
+│ ├── gat.py # GAT 模型 (可選)
+│ └── graphsage.py # GraphSAGE 模型 (可選)
 │
-├── train/
-│ └── train_gcn.py # Training script for GCN
+├── preprocess/ # 資料前處理相關腳本
+│ ├── merge_csvs.py # 合併多天 CSV
+│ ├── clean_data.py # 欄位清理、缺值補齊、標籤編碼
+│ └── preprocess.py # 數值標準化
 │
-├── experiments/ # Saved models, logs, results
-└── utils/
-└── metrics.py # Evaluation metrics
+├── train/ # 訓練相關腳本
+│ ├── train_gcn.py # 訓練 GCN 的腳本
+│ └── train_gat.py # 訓練 GAT 的腳本 (可選)
+│
+├── evaluate/ # 評估相關腳本
+│ └── metrics.py # 評估指標與工具函式
+│
+├── experiments/ # 實驗結果、模型檔、訓練紀錄等
+│
+└── utils/ # 工具函式（資料讀寫、視覺化等）
+└── helpers.py # 例如資料載入、繪圖函式
 
 ## 📚 Dataset
 

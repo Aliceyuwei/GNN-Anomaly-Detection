@@ -1,3 +1,5 @@
+# 負責合併多天 CSV 檔
+
 # 載入 pandas 套件，這是 Python 中最常用的資料處理工具（用來讀 .csv、做分析、表格處理）
 import pandas as pd
 # 載入 os 模組，主要用來處理 檔案與路徑的操作（例如：組路徑、取得目前資料夾位置等）
@@ -6,7 +8,7 @@ import os
 from glob import glob
 
 # 設定資料夾路徑
-data_folder = "data/MachineLearningCSV"
+data_folder = "data/raw"
 
 # # 搜尋所有要合併的檔案（你可以視情況調整）
 # csv_files = sorted(
@@ -47,3 +49,12 @@ print("\n✅ 合併完成")
 print("總筆數：", len(merged_df))
 print("標籤分佈：")
 print(merged_df['Label'].value_counts())
+# print("所有欄位：")
+# print(merged_df.columns.tolist())
+# print("看前五筆資料")
+# print(merged_df.head())
+
+# 存檔到 data/processed 資料夾
+output_path = "data/processed/merged.csv"
+merged_df.to_csv(output_path, index=False)
+print(f"已將合併後資料存成 {output_path}")
