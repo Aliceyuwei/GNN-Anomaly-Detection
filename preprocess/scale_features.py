@@ -27,7 +27,11 @@ def scale_features(input_path, output_path):
     # 將標準化後資料轉回 DataFrame（保留欄位名稱）
     df_scaled = pd.DataFrame(features_scaled, columns=features.columns)
 
-    # 把編碼後的目標欄加回來（Label_enc）
+    # 先檢查欄位是否存在，避免程式錯誤
+    assert 'Label' in df.columns and 'Label_enc' in df.columns, "缺少 Label 或 Label_enc 欄位"
+
+    # 把原始 Label 與 Label_enc 加回來（避免資料遺失）
+    df_scaled['Label'] = df['Label'].values
     df_scaled['Label_enc'] = df['Label_enc'].values
 
     # 儲存結果至新的 CSV 檔案

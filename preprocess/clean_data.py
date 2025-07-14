@@ -45,10 +45,18 @@ def clean_data(input_path, output_path):
     assert not df.isin([float('inf'), float('-inf')]).values.any(), "尚有 Inf 存在"
     print("確認無 NaN / Inf")
 
+    # 修正亂碼標籤
+    df['Label'] = df['Label'].replace({
+        'Web Attack ï¿½ Brute Force': 'Web Attack - Brute Force',
+        'Web Attack ï¿½ Sql Injection': 'Web Attack - Sql Injection',
+        'Web Attack ï¿½ XSS': 'Web Attack - XSS'
+    })
+
     # 標籤編碼：將 'Label' 欄位轉為整數形式
     label_encoder = LabelEncoder()
     df['Label_enc'] = label_encoder.fit_transform(df['Label'])
     print("標籤編碼對照表:")
+    print(df['Label'].unique())
     print(dict(zip(label_encoder.classes_,
           label_encoder.transform(label_encoder.classes_))))
 

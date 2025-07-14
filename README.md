@@ -112,7 +112,7 @@ Select CICIDS2023 as dataset
 Implement graph construction from flows
 
 Build GCN model baseline
-ｓａ
+
 Add evaluation metrics
 
 Add GAT & GraphSAGE comparisons
