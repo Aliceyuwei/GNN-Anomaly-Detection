@@ -15,10 +15,7 @@ def load_data():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(base_dir, '..', 'data',
                              'processed', 'preprocessed.csv')
-    file_path = os.path.abspath(file_path)
-
-    df = pd.read_csv(file_path)
-    return df
+    return pd.read_csv(os.path.abspath(file_path))
 
 
 def add_label_binary(df):
@@ -27,7 +24,6 @@ def add_label_binary(df):
     """
 
     df['Label_Binary'] = df['Label'].apply(lambda x: 0 if x == 'BENIGN' else 1)
-    # print(df.columns.tolist(), '所有欄位')
     return df
 
 
@@ -42,9 +38,7 @@ def select_numeric_features(df):
     exclude_cols = [col for col in [
         'Label', 'Label_Binary', 'Label_enc'] if col in df.columns]
 
-    features = [col for col in numeric_cols if col not in exclude_cols]
-
-    return features
+    return [col for col in numeric_cols if col not in exclude_cols]
 
 
 def compute_feature_correlation(df, features):
@@ -53,25 +47,19 @@ def compute_feature_correlation(df, features):
     回傳一個 Series，index 是特徵名稱，值是相關係數
     並依絕對值由大到小排序。
     """
-    corr_with_label = {}
-    for feature in features:
-        corr = df[feature].corr(df['Label_Binary'])
-        corr_with_label[feature] = corr
-    corr_series = pd.Series(corr_with_label).sort_values(
-        key=abs, ascending=False)
-    return corr_series
+    corr_with_label = {feature: df[feature].corr(
+        df['Label_Binary']) for feature in features}
+    return pd.Series(corr_with_label).sort_values(key=abs, ascending=False)
 
 
 def plot_correlation_heatmap(df, features, save_path=None):
     """
-    畫特徵相關係數熱圖(視覺化輔助)
+    畫特徵之間的相關係數熱圖（輸入為最終保留特徵）
     """
-    corr_matrix = df[features + ['Label_Binary']].corr()
+    corr_matrix = df[features].corr()
     plt.figure(figsize=(12, 10))
     sns.heatmap(corr_matrix, annot=False, cmap='coolwarm', center=0)
-    plt.title("Feature Correlation Heatmap")
-    # plt.show()
-
+    plt.title("Final Feature Correlation Heatmap")
     if save_path:
         plt.savefig(save_path, bbox_inches='tight', dpi=300)
         print(f"圖已儲存到 {save_path}")
@@ -82,16 +70,12 @@ def plot_correlation_heatmap(df, features, save_path=None):
 
 def plot_feature_correlation_bar(corr_series, save_path=None):
     """
-    畫出所有與 Label_Binary 的相關係數條狀圖
+    畫出與 Label_Binary 的相關係數條狀圖
     """
-    plt.figure(figsize=(12, max(6, 0.3 * len(corr_series))))  # 根據特徵數自動調整高度
-    sns.barplot(
-        x=corr_series.values,
-        y=corr_series.index,
-        palette='coolwarm',
-        orient='h'
-    )
-    plt.title("Feature Correlation with Label_Binary")
+    plt.figure(figsize=(12, max(6, 0.3 * len(corr_series))))
+    sns.barplot(x=corr_series.values, y=corr_series.index,
+                palette='coolwarm', orient='h')
+    plt.title("Filtered Feature Correlation with Label_Binary")
     plt.xlabel("Pearson Correlation")
     plt.ylabel("Feature")
     plt.axvline(0, color='black', linewidth=0.8)
@@ -110,8 +94,7 @@ def filter_by_correlation(corr_series, threshold=0.05):
     根據與 Label_Binary 的相關係數大小篩選特徵
     只保留絕對值 ≥ threshold 的特徵
     """
-    selected = corr_series[abs(corr_series) >= threshold].index.tolist()
-    return selected
+    return corr_series[abs(corr_series) >= threshold].index.tolist()
 
 
 def remove_highly_correlated_features(df, features, threshold=0.9):
@@ -123,18 +106,15 @@ def remove_highly_correlated_features(df, features, threshold=0.9):
 
     for i in range(len(features)):
         for j in range(i + 1, len(features)):
-            f1 = features[i]
-            f2 = features[j]
-            if corr_matrix.loc[f1, f2] > threshold:
-                # 兩特徵相關度太高，移除 f2
-                if f2 in to_keep:
-                    to_keep.remove(f2)
+            f1, f2 = features[i], features[j]
+            if corr_matrix.loc[f1, f2] > threshold and f2 in to_keep:
+                to_keep.remove(f2)
     return list(to_keep)
 
 
-def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, plot_heatmap=False, heatmap_output_path=None, barplot_output_path=None):
+def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, barplot_output_path=None, heatmap_output_path=None):
     """
-    整合以上步驟的主程式
+    主流程：執行特徵篩選，並視覺化（條狀圖＋熱圖
     """
     df = load_data()
 
@@ -149,14 +129,11 @@ def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, plot_hea
     print("與 Label_Binary 的相關係數（絕對值由大到小）:")
     print(corr_series)
 
-    # 步驟 4：畫圖：相關係數熱圖 (Correlation Heatmap) & 相關係數條狀圖
-    if plot_heatmap and heatmap_output_path:
-        plot_correlation_heatmap(df, numeric_features,
-                                 save_path=heatmap_output_path)
-
+    # 步驟 4：條狀圖（前 0.05 篩選）
+    filtered_corr_series = corr_series[abs(corr_series) >= corr_threshold]
     if barplot_output_path:
         plot_feature_correlation_bar(
-            corr_series, save_path=barplot_output_path)
+            filtered_corr_series, save_path=barplot_output_path)
 
     # 步驟 5：根據門檻篩選特徵
     selected_features = filter_by_correlation(
@@ -164,12 +141,15 @@ def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, plot_hea
     print(f"\n篩選後的特徵數量（相關係數門檻 {corr_threshold}）：{len(selected_features)}")
 
     # 步驟 6：剔除高度相關特徵
-    selected_features_no_corr = remove_highly_correlated_features(
+    final_features = remove_highly_correlated_features(
         df, selected_features, threshold=high_corr_threshold)
-    print(
-        f"剔除高度相關（> {high_corr_threshold}）後剩餘特徵數量：{len(selected_features_no_corr)}")
 
-    return selected_features_no_corr
+    # 熱圖（用最終保留特徵）
+    if heatmap_output_path:
+        plot_correlation_heatmap(
+            df, final_features, save_path=heatmap_output_path)
+
+    return final_features
 
 
 if __name__ == "__main__":
@@ -177,17 +157,19 @@ if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     # 設定輸出圖片路徑
     heatmap_output_path = os.path.join(
-        BASE_DIR, "../data/processed/correlation_heatmap.png")
+        BASE_DIR, "../data/processed/correlation_heatmap_final.png")
     barplot_output_path = os.path.join(
-        BASE_DIR, "../data/processed/correlation_bar_all.png")
+        BASE_DIR, "../data/processed/correlation_bar_filtered.png")
 
     print(f"熱圖輸出路徑: {heatmap_output_path}")
     print(f"條狀圖輸出路徑: {barplot_output_path}")
 
     selected_features = run_feature_selection(
-        plot_heatmap=True,
-        heatmap_output_path=heatmap_output_path,
+        corr_threshold=0.05,
+        high_corr_threshold=0.9,
         barplot_output_path=barplot_output_path,
+        heatmap_output_path=heatmap_output_path
     )
+
     print("\n最終選擇的特徵清單：")
     print(selected_features)
