@@ -1,5 +1,5 @@
 # ### 特徵選擇 ###
-
+import json
 import os                        # 用於處理檔案與資料夾路徑，例如組合絕對路徑、讀取目前程式所在位置等
 import pandas as pd              # 用於資料讀取與處理（表格型資料，如 CSV），提供 DataFrame 結構
 import numpy as np               # 提供數值運算功能，例如矩陣操作、統計計算
@@ -7,15 +7,11 @@ import matplotlib.pyplot as plt  # 用來繪圖（條狀圖、線圖等），是
 import seaborn as sns            # 基於 matplotlib 的進階繪圖套件，擅長統計視覺化（例如熱圖、分類圖）
 
 
-def load_data():
+def load_data(input_csv_path):
     """
     讀取預處理好的資料
     """
-
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(base_dir, '..', 'data',
-                             'processed', 'preprocessed.csv')
-    return pd.read_csv(os.path.abspath(file_path))
+    return pd.read_csv(input_csv_path)
 
 
 def add_label_binary(df):
@@ -44,12 +40,21 @@ def select_numeric_features(df):
 def compute_feature_correlation(df, features):
     """
     計算每個數值特徵與 Label_Binary 的 Pearson 相關係數
-    回傳一個 Series，index 是特徵名稱，值是相關係數
+    回傳一個 Series，index 是特徵名稱，值是相關係數（float）
     並依絕對值由大到小排序。
     """
-    corr_with_label = {feature: df[feature].corr(
-        df['Label_Binary']) for feature in features}
-    return pd.Series(corr_with_label).sort_values(key=abs, ascending=False)
+    corr_with_label = {}
+    for feature in features:
+        try:
+            corr = df[feature].corr(df['Label_Binary'])
+            corr_with_label[feature] = float(corr)
+        except Exception as e:
+            print(f"⚠️ 特徵 {feature} 計算相關係數失敗：{e}")
+            corr_with_label[feature] = np.nan
+
+    corr_series = pd.Series(corr_with_label).astype(float).dropna()
+
+    return corr_series.sort_values(key=lambda x: abs(x), ascending=False)
 
 
 def plot_correlation_heatmap(df, features, save_path=None):
@@ -112,11 +117,19 @@ def remove_highly_correlated_features(df, features, threshold=0.9):
     return list(to_keep)
 
 
-def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, barplot_output_path=None, heatmap_output_path=None):
+def run_feature_selection(
+    input_csv_path,
+    feature_output_path=None,
+    corr_threshold=0.05,
+    high_corr_threshold=0.9,
+    barplot_output_path=None,
+    heatmap_output_path=None
+):
     """
-    主流程：執行特徵篩選，並視覺化（條狀圖＋熱圖
+    主流程：執行特徵篩選，並視覺化（條狀圖＋熱圖）
+    並將選出特徵寫入 JSON
     """
-    df = load_data()
+    df = load_data(input_csv_path)
 
     # 步驟 1：加入二元 Label
     df = add_label_binary(df)
@@ -124,13 +137,29 @@ def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, barplot_
     # 步驟 2：選數值特徵
     numeric_features = select_numeric_features(df)
 
-    # 步驟 3：計算相關係數
-    corr_series = compute_feature_correlation(df, numeric_features)
+    # 步驟 3：計算每個數值特徵與 Label_Binary 的相關係數
+    try:
+        corr_series = compute_feature_correlation(df, numeric_features)
+        corr_series = corr_series.dropna()
+    except Exception as e:
+        print("計算相關係數時發生錯誤：", e)
+        return []
+
     print("與 Label_Binary 的相關係數（絕對值由大到小）:")
     print(corr_series)
 
+    # 找出哪些特徵的相關係數為 NaN，這代表這些特徵可能資料有問題或無法計算相關係數
+    nan_features = [f for f in numeric_features if df[f].corr(
+        df['Label_Binary']) is np.nan]
+
+    # 如果有相關係數為 NaN 的特徵，印出警告訊息
+    if nan_features:
+        print("⚠️ 以下欄位的相關係數為 NaN，將被排除：", nan_features)
+
     # 步驟 4：條狀圖（前 0.05 篩選）
-    filtered_corr_series = corr_series[abs(corr_series) >= corr_threshold]
+    filtered_corr_series = corr_series[pd.to_numeric(
+        corr_series, errors="coerce").abs() >= corr_threshold]
+
     if barplot_output_path:
         plot_feature_correlation_bar(
             filtered_corr_series, save_path=barplot_output_path)
@@ -149,6 +178,11 @@ def run_feature_selection(corr_threshold=0.05, high_corr_threshold=0.9, barplot_
         plot_correlation_heatmap(
             df, final_features, save_path=heatmap_output_path)
 
+    if feature_output_path:
+        with open(feature_output_path, "w") as f:
+            json.dump(final_features, f, indent=2)
+        print(f"特徵清單已儲存到 {feature_output_path}")
+
     return final_features
 
 
@@ -160,11 +194,18 @@ if __name__ == "__main__":
         BASE_DIR, "../data/processed/correlation_heatmap_final.png")
     barplot_output_path = os.path.join(
         BASE_DIR, "../data/processed/correlation_bar_filtered.png")
+    selected_feature_path = os.path.join(
+        BASE_DIR, "../data/processed/selected_features.json")
+    input_csv_path = os.path.join(
+        BASE_DIR, "../data/processed/preprocessed.csv")
 
     print(f"熱圖輸出路徑: {heatmap_output_path}")
     print(f"條狀圖輸出路徑: {barplot_output_path}")
+    print(f"特徵 JSON 輸出路徑: {selected_feature_path}")
 
     selected_features = run_feature_selection(
+        input_csv_path=input_csv_path,
+        feature_output_path=selected_feature_path,
         corr_threshold=0.05,
         high_corr_threshold=0.9,
         barplot_output_path=barplot_output_path,
